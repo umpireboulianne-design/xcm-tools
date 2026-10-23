@@ -346,6 +346,62 @@ describe('getMinTransferableAmountInternal', () => {
     expect(result).toBe(0n)
     expect(dryRunInternal).not.toHaveBeenCalled()
   })
+
+  it('rethrows non-AmountTooLowError from createTx and does not call dryRunInternal', async () => {
+    mockResolvedAsset({
+      symbol: 'ASSET',
+      decimals: 12
+    } as TAssetInfo)
+    findAssetOnDestOrThrowSpy.mockReturnValue({
+      symbol: 'ASSET',
+      location: {},
+      existentialDeposit: '0'
+    } as TAssetInfo)
+    findNativeAssetInfoOrThrowSpy.mockReturnValue({
+      symbol: 'ASSET'
+    } as TAssetInfo)
+    vi.mocked(getAssetBalanceInternal).mockResolvedValue(0n)
+    vi.mocked(getXcmFee).mockResolvedValue({
+      origin: undefined,
+      hops: [],
+      destination: undefined
+    } as unknown as TGetXcmFeeResult)
+
+    buildInternal.mockRejectedValue(new Error('Build failed'))
+
+    await expect(mod.getMinTransferableAmountInternal(baseOptions)).rejects.toThrow('Build failed')
+    expect(dryRunInternal).not.toHaveBeenCalled()
+  })
+
+  it('rethrows non-AmountTooLowError when padded createTx retry fails with a non-AmountTooLowError', async () => {
+    mockResolvedAsset({
+      symbol: 'ASSET',
+      decimals: 12
+    } as TAssetInfo)
+    findAssetOnDestOrThrowSpy.mockReturnValue({
+      symbol: 'ASSET',
+      location: {},
+      existentialDeposit: '0'
+    } as TAssetInfo)
+    findNativeAssetInfoOrThrowSpy.mockReturnValue({
+      symbol: 'ASSET'
+    } as TAssetInfo)
+    vi.mocked(getAssetBalanceInternal).mockResolvedValue(0n)
+    vi.mocked(getXcmFee).mockResolvedValue({
+      origin: undefined,
+      hops: [],
+      destination: undefined
+    } as unknown as TGetXcmFeeResult)
+
+    buildInternal
+      .mockRejectedValueOnce(new AmountTooLowError())
+      .mockRejectedValueOnce(new Error('Padded build failed'))
+
+    await expect(mod.getMinTransferableAmountInternal(baseOptions)).rejects.toThrow(
+      'Padded build failed'
+    )
+    expect(dryRunInternal).not.toHaveBeenCalled()
+  })
 })
 
 describe('getMinTransferableAmount', () => {
