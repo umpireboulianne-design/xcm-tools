@@ -537,6 +537,39 @@ describe('Builder', () => {
       expect(createTransferOrSwap).toHaveBeenCalledTimes(2)
     })
 
+    it('should not carry keepAlive false into a subsequent batched transfer that omits it', async () => {
+      await Builder(mockApi)
+        .from(CHAIN)
+        .to(CHAIN_2)
+        .currency(CURRENCY)
+        .recipient(ADDRESS)
+        .keepAlive(false)
+        .addToBatch()
+        .from(CHAIN)
+        .to(CHAIN_2)
+        .currency(CURRENCY)
+        .recipient(ADDRESS)
+        .addToBatch()
+        .buildBatch()
+
+      expect(createTransferOrSwap).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          from: CHAIN,
+          to: CHAIN_2,
+          keepAlive: false
+        })
+      )
+      expect(createTransferOrSwap).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          from: CHAIN,
+          to: CHAIN_2,
+          keepAlive: undefined
+        })
+      )
+    })
+
     it('should throw if trying to build when transactions are batched', async () => {
       await expect(
         Builder(mockApi)

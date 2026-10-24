@@ -689,6 +689,35 @@ describe('XTransferService', () => {
       expect(builderMock.buildBatch).toHaveBeenCalledWith(batchDto.options);
     });
 
+    it('should not carry keepAlive false into a subsequent batched transfer that omits it', async () => {
+      const from: TChain = 'Polkadot';
+
+      const batchDto: BatchXTransferDto = {
+        transfers: [
+          {
+            from,
+            to: from,
+            recipient,
+            currency: { symbol: 'DOT', amount: 100 },
+            keepAlive: false,
+          },
+          {
+            from,
+            to: from,
+            recipient,
+            currency: { symbol: 'DOT', amount: 100 },
+          },
+        ],
+      };
+
+      const result = await service.generateBatchXcmCall(batchDto);
+
+      expect(result).toBe(txHashBatch);
+      expect(builderMock.keepAlive).toHaveBeenNthCalledWith(1, false);
+      expect(builderMock.keepAlive).toHaveBeenNthCalledWith(2, undefined);
+      expect(builderMock.addToBatch).toHaveBeenCalledTimes(2);
+    });
+
     it('should generate batch XCM call for valid relay to parachain transfers', async () => {
       const batchDto: BatchXTransferDto = {
         transfers: [

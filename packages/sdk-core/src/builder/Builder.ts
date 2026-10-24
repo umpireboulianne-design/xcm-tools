@@ -225,7 +225,7 @@ export class GeneralBuilder<
    * @param value - A boolean indicating whether to keep the account alive.
    * @returns An instance of Builder
    */
-  keepAlive(keepAlive: boolean) {
+  keepAlive(keepAlive: boolean | undefined) {
     return new GeneralBuilder(this.api, this.batchManager, { ...this._options, keepAlive })
   }
 
@@ -320,7 +320,7 @@ export class GeneralBuilder<
     return new GeneralBuilder<TApi, TRes, TSigner, T & { from: TSubstrateChain }, TCustomChain>(
       this.api,
       this.batchManager,
-      { ...this._options, from } as T & { from: TSubstrateChain }
+      { from } as T & { from: TSubstrateChain }
     )
   }
 
