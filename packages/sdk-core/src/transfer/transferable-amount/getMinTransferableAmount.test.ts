@@ -346,6 +346,33 @@ describe('getMinTransferableAmountInternal', () => {
     expect(result).toBe(0n)
     expect(dryRunInternal).not.toHaveBeenCalled()
   })
+
+  it('rethrows non-AmountTooLowError from createTx without calling dryRunInternal', async () => {
+    mockResolvedAsset({
+      symbol: 'ASSET',
+      decimals: 12
+    } as TAssetInfo)
+    findAssetOnDestOrThrowSpy.mockReturnValue({
+      symbol: 'ASSET',
+      location: {},
+      existentialDeposit: '0'
+    } as TAssetInfo)
+    findNativeAssetInfoOrThrowSpy.mockReturnValue({
+      symbol: 'ASSET'
+    } as TAssetInfo)
+    vi.mocked(getAssetBalanceInternal).mockResolvedValue(0n)
+    vi.mocked(getXcmFee).mockResolvedValue({
+      origin: undefined,
+      hops: [],
+      destination: undefined
+    } as unknown as TGetXcmFeeResult)
+
+    const error = new Error('Unexpected build failure')
+    buildInternal.mockRejectedValue(error)
+
+    await expect(mod.getMinTransferableAmountInternal(baseOptions)).rejects.toThrow(error)
+    expect(dryRunInternal).not.toHaveBeenCalled()
+  })
 })
 
 describe('getMinTransferableAmount', () => {
